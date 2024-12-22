@@ -55,16 +55,17 @@ class Korail(object):
         reserveOne = None
         while not reserveOne:
             try:
-                trains = self.korailObj.search_train(srcLocate, dstLocate, depDate, depTime, train_type=trainType)
+                trains = self.korailObj.search_train(srcLocate, dstLocate, depDate, depTime, train_type=trainType, transfer_type='2') # 241222 환승 검색을 위한 , transfer_type='2' 추가
                 timeL = "".join(str(trains[0]).split("(")[1].split("~")[0].split(":"))
                 if (int(timeL) >= int(maxDepTime)): trains = []
             except NoResultsError:
                 trains = []
             
-            for train in trains:
-                print (f'열차 발견 : {train} <- 에 대한 예약을 시작합니다.')
+            iterator = iter(trains) # 241222 iterator 활용으로 복수의 변수를 추출
+            for train1, train2 in zip(iterator, iterator): # 241222 선, 후행 열차 정보를 순회
+                print (f'열차 발견 : {train1, train2} <- 에 대한 예약을 시작합니다.') # 241222 선, 후행 열차를 확인 토록 정보 수정
                 try:
-                    reserveOne = self.korailObj.reserve(train, option=special)
+                    reserveOne = self.korailObj.reserve(train1, train2, option=special) # 241222 선, 후행 열차 정보를 예약
                     if (reserveOne):
                         self.reserveInfo['reserveSuc'] = True
                         break
