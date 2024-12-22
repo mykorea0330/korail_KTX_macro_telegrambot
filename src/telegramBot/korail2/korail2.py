@@ -678,7 +678,8 @@ When you want change ID using existing object,
         return all_trains
 
     def search_train(self, dep, arr, date=None, time=None, train_type=TrainType.ALL,
-                     passengers=None, include_no_seats=False):
+                     passengers=None, include_no_seats=False, transfer_type=None):
+        ## 20241222 folk > 환승 열차 검색을 위한 "transfer_type=None" 추가 
         """Search trains for specific time and date.
 
 :param dep: A departure station in Korean  ex) '서울'
@@ -794,6 +795,7 @@ There are 3 types of Passengers now, AdultPassenger, ChildPassenger and SeniorPa
             'txtSeatAttCd_2': '000',
             'txtSeatAttCd_3': '000',
             'txtSeatAttCd_4': '015',
+            'txtSeatAttCd_4_1': '015', # 241222 환승을 위한 검색 추가
             'txtTrnGpCd': train_type,
 
             'Version': self._version,
@@ -819,7 +821,8 @@ There are 3 types of Passengers now, AdultPassenger, ChildPassenger and SeniorPa
 
             return trains
 
-    def reserve(self, train, passengers=None, option=ReserveOption.GENERAL_FIRST):
+    def reserve(self, train, train2, passengers=None, option=ReserveOption.GENERAL_FIRST):
+        ## train, train2 선, 후행 열차 정보로 train2 추가
         """Reserve a train.
 
 :param train: An instance of `Train`.
@@ -882,6 +885,7 @@ There are 4 options in ReserveOption class.
             'txtSeatAttCd2': '000',
             'txtSeatAttCd3': '000',
             'txtSeatAttCd4': '015',
+            'txtSeatAttCd4_1': '015', ## 241222 환승 위한 추가
             'txtSeatAttCd5': '000',
             'hidFreeFlg': 'N',
             'txtStndFlg': 'N',
@@ -891,7 +895,7 @@ There are 4 options in ReserveOption class.
 
             # 이하 여정정보1
             'txtJrnySqno1': '001',
-            'txtJrnyTpCd1': '11',
+            'txtJrnyTpCd1': '14', ## 직통 11, 환승 14
             'txtDptDt1': train.dep_date,
             'txtDptRsStnCd1': train.dep_code,
             'txtDptTm1': train.dep_time,
@@ -903,17 +907,18 @@ There are 4 options in ReserveOption class.
             'txtTrnGpCd1': train.train_group,
             'txtChgFlg1': '',
 
-            # 이하 여정정보2
-            'txtJrnySqno2': '',
-            'txtJrnyTpCd2': '',
-            'txtDptDt2': '',
-            'txtDptRsStnCd2': '',
-            'txtDptTm2': '',
-            'txtArvRsStnCd2': '',
-            'txtTrnNo2': '',
-            'txtRunDt2': '',
-            'txtTrnClsfCd2': '',
-            'txtPsrmClCd2': '',
+            # 이하 여정정보2 // 241222 환승을 위한 정보 수정
+            'txtJrnySqno2': '002',
+            'txtJrnyTpCd2': '14',
+            'txtDptDt2': train2.dep_date,
+            'txtDptRsStnCd2': train2.dep_code,
+            'txtDptTm2': train2.dep_time,
+            'txtArvRsStnCd2': train2.arr_code,
+            'txtTrnNo2': train2.train_no,
+            'txtRunDt2': train2.run_date,
+            'txtTrnClsfCd2': train2.train_type,
+            'txtPsrmClCd2': seat_type,
+            'txtTrnGpCd2': train2.train_group,
             'txtChgFlg2': '',
 
             # 이하 txtTotPsgCnt 만큼 반복
@@ -935,7 +940,8 @@ There are 4 options in ReserveOption class.
         if self._result_check(j):
             rsv_id = j['h_pnr_no']
             rsvlist = list(filter(lambda x: x.rsv_id == rsv_id, self.reservations()))
-            if len(rsvlist) == 1:
+            if len(rsvlist) == 2:
+                ## 241222 직통 1, 환승2, 선,후행 열차 배열을 확인 후 예약 확정 시 종료
                 return rsvlist[0]
 
     def tickets(self):
